@@ -1,5 +1,5 @@
 wake_word:
-  model_name: "hey_jarvis"
+  model_name: "hey_jarvis_v0.1.tflite"
   models_dir: "models/wake_word/"
   threshold: 0.5
 
