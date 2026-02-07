@@ -8,7 +8,7 @@ cd "$PROJECT_DIR"
 echo "Starting Pi Voice Assistant..."
 
 # -----------------------------
-# 1. Ensure uv is installed
+# Ensure uv is installed
 # -----------------------------
 if ! command -v uv &> /dev/null; then
     echo "uv not found. Installing uv..."
@@ -17,13 +17,13 @@ if ! command -v uv &> /dev/null; then
 fi
 
 # -----------------------------
-# 2. Ensure correct Python
+# Ensure correct Python
 # -----------------------------
 echo "Ensuring Python 3.11..."
 uv python install 3.11
 
 # -----------------------------
-# 3. Create venv if missing
+# Create venv if missing
 # -----------------------------
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
@@ -31,13 +31,19 @@ if [ ! -d ".venv" ]; then
 fi
 
 # -----------------------------
-# 4. Install dependencies
+# Install dependencies
 # -----------------------------
 echo "Syncing dependencies..."
 uv sync
 
 # -----------------------------
-# 5. Run application
+# Run setup
+# -----------------------------
+echo "Running setup script..."
+uv run -m setup
+
+# -----------------------------
+# Run application
 # -----------------------------
 echo "Launching assistant..."
 uv run -m src.main

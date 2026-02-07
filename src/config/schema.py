@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 @dataclass(frozen=True)
 class WakeWordConfig:
     model_name: str = "hey_jarvis"
+    models_dir: str = "models/wake_word/"
     threshold: float = 0.5
     vad_threshold: float | None = None
 
@@ -41,7 +42,7 @@ class AgentConfig:
 
 @dataclass(frozen=True)
 class TTSConfig:
-    model_path: str = "models/en_US-lessac-medium.onnx"
+    model_path: str = "models/tts/en_US-lessac-medium.onnx"
     speaker_id: int = 0
     length_scale: float = 1.0
     noise_scale: float = 0.667
