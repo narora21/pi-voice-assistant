@@ -19,15 +19,15 @@ fi
 # -----------------------------
 # 2. Ensure correct Python
 # -----------------------------
-echo "Ensuring Python 3.12..."
-uv python install 3.12
+echo "Ensuring Python 3.11..."
+uv python install 3.11
 
 # -----------------------------
 # 3. Create venv if missing
 # -----------------------------
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
-    uv venv --python 3.12
+    uv venv --python 3.11
 fi
 
 # -----------------------------
