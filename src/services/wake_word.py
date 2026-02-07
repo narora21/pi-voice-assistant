@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import platform
 from typing import Protocol
 
@@ -38,11 +39,12 @@ class OpenWakeWordService:
             logger.error(f"Unable to import open wake word model on platform {platform.system()}")
             raise e
 
+        model_path = os.path.join(self._config.models_dir, self._config.model_name)
         loop = asyncio.get_event_loop()
         self._model = await loop.run_in_executor(
             None,
             lambda: Model(
-                wakeword_models=[self._config.model_name],
+                wakeword_models=[model_path],
                 vad_threshold=self._config.vad_threshold,
             ),
         )

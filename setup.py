@@ -11,6 +11,7 @@ def download_wake_word_model(config: WakeWordConfig):
         print(f"Unable to import open wake word model on platform {platform.system()}. Skipping...")
         return
 
+    print(f"Downloading model: {config.model_name}")
     if config.models_dir:
         openwakeword.utils.download_models([config.model_name], config.models_dir)
     else:
