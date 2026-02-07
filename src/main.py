@@ -1,0 +1,68 @@
+import asyncio
+import logging
+import signal
+
+from src.config.loader import load_config
+from src.core.orchestrator import Orchestrator
+from src.core.session import Session
+from src.services.agent import AgentService
+from src.services.audio_capture import MockAudioCaptureService
+from src.services.audio_playback import MockAudioPlaybackService
+from src.services.stt import SpeechToTextService
+from src.services.tts import TextToSpeechService
+from src.services.wake_word import OpenWakeWordService
+from src.tools.builtin.device_control import DeviceControlTool
+from src.tools.registry import ToolRegistry
+from src.util.logging import setup_logging
+
+logger = logging.getLogger(__name__)
+
+
+async def main() -> None:
+    config = load_config()
+    setup_logging(config.logging)
+
+    logger.info("Starting Pi Voice Assistant")
+
+    # Tool registry
+    registry = ToolRegistry()
+    registry.register(DeviceControlTool())
+
+    # Services
+    wake_word = OpenWakeWordService(config.wake_word)
+    audio_capture = MockAudioCaptureService(config.audio)
+    stt = SpeechToTextService(config.stt)
+    agent = AgentService(config.agent, registry)
+    tts = TextToSpeechService(config.tts)
+    audio_playback = MockAudioPlaybackService()
+
+    # Session
+    session = Session(config.session)
+
+    # Orchestrator
+    orchestrator = Orchestrator(
+        config=config,
+        wake_word=wake_word,
+        audio_capture=audio_capture,
+        stt=stt,
+        agent=agent,
+        tts=tts,
+        audio_playback=audio_playback,
+        session=session,
+    )
+
+    # Graceful shutdown on SIGINT/SIGTERM
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(orchestrator.stop()))
+
+    try:
+        await orchestrator.start()
+    except Exception:
+        logger.exception("Fatal error")
+    finally:
+        await orchestrator.stop()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,0 +1,44 @@
+wake_word:
+  model_name: "hey_jarvis"
+  threshold: 0.5
+
+audio:
+  sample_rate: 16000
+  frame_duration_ms: 80
+  channels: 1
+
+stt:
+  model_size: "base.en"
+  device: "cpu"
+  compute_type: "int8"
+  beam_size: 5
+  language: "en"
+  vad_filter: true
+
+agent:
+  model: "qwen2.5:1.5b"
+  base_url: "http://localhost:11434"
+  system_prompt: |
+    You are a helpful voice assistant running on a Raspberry Pi.
+    Keep responses concise and conversational.
+    When using tools, explain what you're doing briefly.
+  max_tool_rounds: 5
+  temperature: 0.7
+  stream: true
+
+tts:
+  model_path: "models/en_US-lessac-medium.onnx"
+  speaker_id: 0
+  length_scale: 1.0
+  noise_scale: 0.667
+  noise_w: 0.8
+
+session:
+  idle_timeout_seconds: 30.0
+  max_history_messages: 50
+
+logging:
+  level: "INFO"
+  file: "logs/assistant.log"
+  max_bytes: 5242880
+  backup_count: 3
