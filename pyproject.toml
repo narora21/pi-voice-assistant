@@ -7,23 +7,13 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
     "ollama>=0.4.0",
     "pyyaml>=6.0",
-    "numpy>=1.26.0",
+    "numpy>=1.26,<2",
     "faster-whisper>=1.1.0",
     "openwakeword; platform_system == 'Linux' and python_version < '3.13'",
     "tflite-runtime>=2.14.0; platform_system == 'Linux'",
     "piper-tts>=1.2.0",
     "httpx>=0.27.0",
     "beautifulsoup4>=4.12.0",
-]
-
-dev = [
-    "faster-whisper>=1.1.0",
-    "openwakeword; python_version < '3.13'", # Wake word support (tflite-runtime does not support Python 3.13)
-    "piper-tts>=1.2.0",
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.8.0",
-    "mypy>=1.13",
 ]
 
 [build-system]
@@ -34,11 +24,11 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 100
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 strict = true
 
 [tool.pytest.ini_options]
