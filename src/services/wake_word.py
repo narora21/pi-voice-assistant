@@ -40,12 +40,15 @@ class OpenWakeWordService:
             raise e
 
         model_path = os.path.join(self._config.models_dir, self._config.model_name)
+        model_args = dict()
+        if self._config.vad_threshold:
+            model_args = { "vad_threshold": self._config.vad_threshold }
         loop = asyncio.get_event_loop()
         self._model = await loop.run_in_executor(
             None,
             lambda: Model(
                 wakeword_models=[model_path],
-                vad_threshold=self._config.vad_threshold,
+                **model_args
             ),
         )
         logger.info(f"Wake word model loaded: {self._config.model_name}")
