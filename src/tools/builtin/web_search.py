@@ -52,7 +52,7 @@ class WebSearchTool:
             ) as client:
                 response = await client.get(search_url, params=params)
 
-            if response.status_code != 200:
+            if not response.is_success:
                 return f"Error: Search request failed with status code {response.status_code}."
 
             soup = BeautifulSoup(response.text, "html.parser")
