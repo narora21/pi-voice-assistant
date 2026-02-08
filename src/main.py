@@ -14,6 +14,8 @@ from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import OpenWakeWordService
 from src.tools.builtin.device_control import DeviceControlTool
+from src.tools.builtin.web_fetch import WebFetchTool
+from src.tools.builtin.web_search import WebSearchTool
 from src.tools.registry import ToolRegistry
 from src.util.logging import setup_logging
 
@@ -28,7 +30,9 @@ async def main(args) -> None:
 
     # Tool registry
     registry = ToolRegistry()
-    #registry.register(DeviceControlTool())
+    registry.register(DeviceControlTool())
+    registry.register(WebFetchTool())
+    registry.register(WebSearchTool())
 
     # Exit early for print mode
     if args.print:

@@ -46,7 +46,7 @@ class LiveAudioCaptureService:
         self._running = False
         self._frame_size = int(config.sample_rate * config.frame_duration_ms / 1000)
         self._stream: object | None = None
-        self._queue: asyncio.Queue[np.ndarray | None] = asyncio.Queue(maxsize=64)
+        self._queue: asyncio.Queue[np.ndarray | None] = asyncio.Queue(maxsize=128)
         self._loop: asyncio.AbstractEventLoop | None = None
 
     async def start(self) -> None:
@@ -59,14 +59,15 @@ class LiveAudioCaptureService:
             indata: bytes, frames: int, time_info: object, status: object
         ) -> None:
             if status:
+                # Schedule warning on the event loop instead of logging directly
                 self._loop.call_soon_threadsafe(
-                    logger.warning, "Audio capture status: %s", status
+                    lambda: logger.warning("Audio capture status: %s", status)
                 )
             frame = np.frombuffer(indata, dtype=np.int16).copy()
             try:
                 self._queue.put_nowait(frame)
             except asyncio.QueueFull:
-                pass  # Drop frame rather than block audio thread
+                pass # Drop the frame
 
         try:
             self._stream = sd.RawInputStream(
@@ -83,46 +84,67 @@ class LiveAudioCaptureService:
                 self._config.sample_rate,
                 self._frame_size,
             )
-        except sounddevice.PortAudioError:
-            logging.error("An error ocurred while starting audio capture. Please check the device connection and make sure all channels are detectable")
+        except Exception:
+            logger.error(
+                "An error occurred while starting audio capture. "
+                "Please check the device connection and make sure all channels are detectable"
+            )
             raise
 
     async def stop(self) -> None:
+        self._running = False
         if self._stream is not None:
+            self._stream.stop()
             self._stream.close()
             self._stream = None
-        await self._queue.put(None)
+        # Signal consumer to exit
+        try:
+            self._queue.put_nowait(None)
+        except asyncio.QueueFull:
+            pass
         logger.info("LiveAudioCapture stopped")
 
     async def stream_frames(self) -> AsyncIterator[np.ndarray]:
         if not self._running:
             logger.warning("Cannot stream audio capture frames, stream must be started first")
+            return
         while self._running:
-            frame = await self._queue.get()
-            if frame is None:
-                return
-            yield frame
-    
+            try:
+                # Use wait_for to not block on audio callback hogging async loop
+                frame = await asyncio.wait_for(self._queue.get(), timeout=0.1)
+                if frame is None:
+                    return
+                yield frame
+            except asyncio.TimeoutError:
+                # Just loop back and check _running again
+                continue
+
     def start_capture(self) -> None:
         if self._stream is None:
-            logging.warning("Audio input stream is None")
+            logger.warning("Audio input stream is None")
             return
         # Empty the queue
-        while not self._queue.empty():
-            try:
-                item = self._queue.get_nowait()
-                self._queue.task_done()
-            except asyncio.QueueEmpty:
-                break
+        self._drain_queue()
         self._stream.start()
         self._running = True
-    
+        logger.info("Audio capture started")
+
     def stop_capture(self) -> None:
         if self._stream is None:
-            logging.warning("Audio input stream is None")
+            logger.warning("Audio input stream is None")
             return
         self._running = False
         self._stream.stop()
+        self._drain_queue()
+        logger.info("Audio capture stopped")
+
+    def _drain_queue(self) -> None:
+        """Empty the queue without blocking."""
+        while True:
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
 
     def _resolve_device(self, sd: object) -> int | None:
         """Resolve config device string to a sounddevice device index."""
@@ -140,9 +162,8 @@ class LiveAudioCaptureService:
         raise RuntimeError(
             f"Audio device not found: {device_str!r}. Available devices: {available}"
         )
-    
-    def is_silent_frame(self, frame: np.ndarray):
-        # RMS threshold for speech detection (silence threshold)
+
+    def is_silent_frame(self, frame: np.ndarray) -> bool:
         energy_threshold = self._config.energy_threshold
         rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2))
         return rms <= energy_threshold
