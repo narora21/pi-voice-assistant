@@ -37,7 +37,7 @@ def test_load_yaml_config():
         assert config.agent.temperature == 0.5
         assert config.stt.model_size == "tiny.en"
         # Non-overridden values keep defaults
-        assert config.wake_word.model_name == "hey_jarvis"
+        assert config.wake_word.model_name == "hey_jarvis_v0.1.tflite"
     finally:
         tmp_path.unlink()
 
