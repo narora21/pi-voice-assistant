@@ -68,22 +68,26 @@ class LiveAudioCaptureService:
             except asyncio.QueueFull:
                 pass  # Drop frame rather than block audio thread
 
-        self._stream = sd.RawInputStream(
-            samplerate=self._config.sample_rate,
-            blocksize=self._frame_size,
-            device=device,
-            channels=self._config.channels,
-            dtype="int16",
-            callback=_audio_callback,
-        )
-        self._stream.start()
-        self._running = True
-        logger.info(
-            "LiveAudioCapture started (device=%s, rate=%d, frame_size=%d)",
-            device,
-            self._config.sample_rate,
-            self._frame_size,
-        )
+        try:
+            self._stream = sd.RawInputStream(
+                samplerate=self._config.sample_rate,
+                blocksize=self._frame_size,
+                device=device,
+                channels=self._config.channels,
+                dtype="int16",
+                callback=_audio_callback,
+            )
+            self._stream.start()
+            self._running = True
+            logger.info(
+                "LiveAudioCapture started (device=%s, rate=%d, frame_size=%d)",
+                device,
+                self._config.sample_rate,
+                self._frame_size,
+            )
+        except sounddevice.PortAudioError:
+            logging.error("An error ocurred while starting audio capture. Please check the device connection and make sure all channels are detectable")
+            raise
 
     async def stop(self) -> None:
         self._running = False
