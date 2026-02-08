@@ -14,6 +14,7 @@ from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import OpenWakeWordService
 from src.tools.builtin.device_control import DeviceControlTool
+from src.tools.builtin.end_conversation import EndConversationTool
 from src.tools.builtin.web_fetch import WebFetchTool
 from src.tools.builtin.web_search import WebSearchTool
 from src.tools.registry import ToolRegistry
@@ -31,6 +32,8 @@ async def main(args) -> None:
     # Tool registry
     registry = ToolRegistry()
     #registry.register(DeviceControlTool())
+    end_conversation = EndConversationTool()
+    registry.register(end_conversation)
     registry.register(WebFetchTool())
     registry.register(WebSearchTool(secrets.brave_search_api_key))
 
@@ -74,6 +77,7 @@ async def main(args) -> None:
         tts=tts,
         audio_playback=audio_playback,
         session=session,
+        end_conversation=end_conversation,
     )
 
     # Graceful shutdown on SIGINT/SIGTERM

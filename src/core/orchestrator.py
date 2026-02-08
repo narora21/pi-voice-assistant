@@ -12,6 +12,7 @@ from src.services.audio_playback import AudioPlaybackService
 from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import WakeWordDetector
+from src.tools.builtin.end_conversation import EndConversationTool
 from src.util.chunk_batcher import ChunkBatcher
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class Orchestrator:
         tts: TextToSpeechService,
         audio_playback: AudioPlaybackService,
         session: Session,
+        end_conversation: EndConversationTool,
     ) -> None:
         self._args = args
         self._config = config
@@ -41,6 +43,7 @@ class Orchestrator:
         self._tts = tts
         self._playback = audio_playback
         self._session = session
+        self._end_conversation = end_conversation
         self._state = AssistantState.WAITING
         self._running = False
         self._pending_chunks: asyncio.Queue[str | None] = asyncio.Queue()
@@ -229,11 +232,15 @@ class Orchestrator:
         logger.info(f"Agent response: {response_text!r}")
         self._session.touch()
 
-        self._transition_to(AssistantState.WAITING)
-        #if self._session.is_active:
-        #    self._transition_to(AssistantState.LISTENING)
-        #else:
-        #    self._transition_to(AssistantState.WAITING)
+        if self._end_conversation.triggered:
+            logger.info("Agent ended the conversation")
+            self._end_conversation.reset()
+            self._session.end()
+            self._transition_to(AssistantState.WAITING)
+        elif self._session.is_active:
+            self._transition_to(AssistantState.LISTENING)
+        else:
+            self._transition_to(AssistantState.WAITING)
 
 
     async def _synthesis_worker(self, audio_queue: asyncio.Queue[bytes | None]) -> None:
