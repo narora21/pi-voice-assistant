@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main(args) -> None:
-    config = load_config()
+    config, secrets = load_config()
     setup_logging(config.logging)
 
     logger.info("Starting Pi Voice Assistant")
@@ -32,7 +32,7 @@ async def main(args) -> None:
     registry = ToolRegistry()
     registry.register(DeviceControlTool())
     registry.register(WebFetchTool())
-    registry.register(WebSearchTool())
+    registry.register(WebSearchTool(secrets.brave_search_api_key))
 
     # Exit early for print mode
     if args.print:

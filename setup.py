@@ -94,7 +94,7 @@ def verify_audio_device(config: AudioConfig):
 
 
 def main() -> None:
-    config: AppConfig = load_config()
+    config, _ = load_config()
     download_wake_word_model(config.wake_word)
     download_tts_model(config.tts)
     verify_audio_device(config.audio)
