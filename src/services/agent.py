@@ -64,10 +64,7 @@ class AgentService:
 
                 if chunk["message"].get("tool_calls"):
                     for tc in chunk["message"]["tool_calls"]:
-                        tool_calls.append({
-                            "name": tc["function"]["name"],
-                            "arguments": tc["function"]["arguments"],
-                        })
+                        tool_calls.append(tc)
 
             # Record assistant message
             session.add_message(Message(
@@ -82,9 +79,10 @@ class AgentService:
             # Execute tool calls and feed results back
             logger.info(f"Tool round {tool_round + 1}: {len(tool_calls)} call(s)")
             for tc in tool_calls:
-                result = await self._tools.call_tool(tc["name"], tc["arguments"])
+                fn = tc["function"]
+                result = await self._tools.call_tool(fn["name"], fn["arguments"])
                 session.add_message(Message(
                     role="tool",
                     content=result,
-                    tool_name=tc["name"],
+                    tool_name=fn["name"],
                 ))

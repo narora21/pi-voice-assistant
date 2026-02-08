@@ -47,7 +47,9 @@ class WebSearchTool:
         params = {"q": query}
 
         try:
-            async with httpx.AsyncClient(timeout=SEARCH_TIMEOUT_SECONDS) as client:
+            async with httpx.AsyncClient(
+                timeout=SEARCH_TIMEOUT_SECONDS, follow_redirects=True
+            ) as client:
                 response = await client.get(search_url, params=params)
 
             if response.status_code != 200:
