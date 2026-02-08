@@ -30,7 +30,6 @@ class STTConfig:
 @dataclass(frozen=True)
 class AgentConfig:
     model: str = "qwen2.5:1.5b"
-    base_url: str = "http://localhost:11434"
     system_prompt: str = (
         "You are a helpful voice assistant running on a Raspberry Pi. "
         "Keep responses concise and conversational. "
