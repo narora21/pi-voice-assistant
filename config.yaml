@@ -23,10 +23,6 @@ stt:
 
 agent:
   model: "qwen2.5:1.5b"
-  system_prompt: |
-    You are a helpful voice assistant running on a Raspberry Pi.
-    Keep responses concise and conversational.
-    When using tools, explain what you're doing briefly.
   max_tool_rounds: 5
   temperature: 0.7
   stream: true
