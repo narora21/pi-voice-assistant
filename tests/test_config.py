@@ -37,41 +37,42 @@ def test_load_yaml_config():
         assert config.agent.temperature == 0.5
         assert config.stt.model_size == "tiny.en"
         # Non-overridden values keep defaults
-        assert config.wake_word.model_name == "hey_jarvis_v0.1.tflite"
+        assert config.wake_word.model_name == "hey_jarvis_v0.1"
     finally:
         tmp_path.unlink()
 
 
 def test_env_override(monkeypatch):
     """Environment variables override YAML values."""
-    monkeypatch.setenv("OLLAMA_BASE_URL", "http://custom:1234")
+    sys_prompt = "You are a helpful assistant"
+    monkeypatch.setenv("AGENT_SYSTEM_PROMPT", sys_prompt)
     config = load_config(
         config_path=Path("/nonexistent/config.yaml"),
         env_path=Path("/nonexistent/.env"),
     )
-    assert config.agent.base_url == "http://custom:1234"
+    assert config.agent.system_prompt == sys_prompt
 
 
 def test_load_env_file():
     """Values from .env file are loaded."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
-        f.write('OLLAMA_BASE_URL=http://from-env:5678\n')
+        f.write('AGENT_SYSTEM_PROMPT=Hello\n')
         env_path = Path(f.name)
 
     # Clear any existing env var so .env file takes effect
-    old_val = os.environ.pop("OLLAMA_BASE_URL", None)
+    old_val = os.environ.pop("AGENT_SYSTEM_PROMPT", None)
     try:
         config = load_config(
             config_path=Path("/nonexistent/config.yaml"),
             env_path=env_path,
         )
-        assert config.agent.base_url == "http://from-env:5678"
+        assert config.agent.system_prompt == "Hello"
     finally:
         env_path.unlink()
         if old_val is not None:
-            os.environ["OLLAMA_BASE_URL"] = old_val
+            os.environ["AGENT_SYSTEM_PROMPT"] = old_val
         else:
-            os.environ.pop("OLLAMA_BASE_URL", None)
+            os.environ.pop("AGENT_SYSTEM_PROMPT", None)
 
 
 def test_frozen_config():

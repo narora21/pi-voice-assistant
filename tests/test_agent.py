@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -11,30 +11,25 @@ from src.tools.base import ToolDefinition, ToolParameter
 from src.tools.registry import ToolRegistry
 
 
-@dataclass
-class MockToolCall:
-    function: Any
+def make_chunk(content: str = "", tool_calls: list[dict] | None = None) -> dict:
+    """Create a mock chunk dict matching Ollama's streaming response format."""
+    chunk = {
+        "message": {
+            "content": content,
+            "tool_calls": tool_calls or [],
+        }
+    }
+    return chunk
 
 
-@dataclass
-class MockFunction:
-    name: str
-    arguments: dict[str, Any]
-
-
-@dataclass
-class MockMessage:
-    content: str = ""
-    tool_calls: list[MockToolCall] | None = None
-
-
-@dataclass
-class MockChunk:
-    message: MockMessage = None  # type: ignore[assignment]
-
-    def __post_init__(self):
-        if self.message is None:
-            self.message = MockMessage()
+def make_tool_call(name: str, arguments: dict[str, Any]) -> dict:
+    """Create a tool call dict matching Ollama's format."""
+    return {
+        "function": {
+            "name": name,
+            "arguments": arguments,
+        }
+    }
 
 
 class EchoTool:
@@ -58,7 +53,6 @@ class EchoTool:
 def agent_config():
     return AgentConfig(
         model="test-model",
-        base_url="http://localhost:11434",
         max_tool_rounds=3,
         stream=True,
     )
@@ -96,8 +90,8 @@ async def test_run_simple_text_response(agent, session):
     mock_client = AsyncMock()
 
     async def mock_stream():
-        yield MockChunk(message=MockMessage(content="Hello "))
-        yield MockChunk(message=MockMessage(content="world!"))
+        yield make_chunk(content="Hello ")
+        yield make_chunk(content="world!")
 
     mock_client.chat.return_value = mock_stream()
     agent._client = mock_client
@@ -128,17 +122,15 @@ async def test_run_with_tool_call(agent, session):
         if call_count == 1:
             # First call: LLM requests a tool call
             async def stream1():
-                yield MockChunk(message=MockMessage(
+                yield make_chunk(
                     content="",
-                    tool_calls=[MockToolCall(
-                        function=MockFunction(name="echo", arguments={"text": "test"})
-                    )],
-                ))
+                    tool_calls=[make_tool_call("echo", {"text": "test"})],
+                )
             return stream1()
         else:
             # Second call: LLM responds with text after seeing tool result
             async def stream2():
-                yield MockChunk(message=MockMessage(content="Done!"))
+                yield make_chunk(content="Done!")
             return stream2()
 
     mock_client.chat = mock_chat
@@ -162,12 +154,10 @@ async def test_max_tool_rounds(agent, session):
 
     async def mock_chat(**kwargs):
         async def stream():
-            yield MockChunk(message=MockMessage(
+            yield make_chunk(
                 content="calling tool",
-                tool_calls=[MockToolCall(
-                    function=MockFunction(name="echo", arguments={"text": "loop"})
-                )],
-            ))
+                tool_calls=[make_tool_call("echo", {"text": "loop"})],
+            )
         return stream()
 
     mock_client.chat = mock_chat

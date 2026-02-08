@@ -46,4 +46,4 @@ uv run -m setup
 # Run application
 # -----------------------------
 echo "Launching assistant..."
-uv run -m src.main
+uv run -m src.main "$@"

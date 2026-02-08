@@ -26,7 +26,7 @@ _SECTION_CLASSES = {
 }
 
 _ENV_OVERRIDES: dict[str, tuple[str, str]] = {
-    "OLLAMA_BASE_URL": ("agent", "base_url"),
+    "AGENT_SYSTEM_PROMPT": ("agent", "system_prompt"),
 }
 
 

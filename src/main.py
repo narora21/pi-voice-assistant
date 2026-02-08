@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import logging
 import signal
@@ -18,7 +19,7 @@ from src.util.logging import setup_logging
 logger = logging.getLogger(__name__)
 
 
-async def main() -> None:
+async def main(args) -> None:
     config = load_config()
     setup_logging(config.logging)
 
@@ -26,7 +27,20 @@ async def main() -> None:
 
     # Tool registry
     registry = ToolRegistry()
-    registry.register(DeviceControlTool())
+    #registry.register(DeviceControlTool())
+
+    # Exit early for print mode
+    if args.print:
+        logger.info(f"Starting agent in headless mode (--print) with prompt: {args.print}")
+        session = Session(config.session)
+        session.start(config.agent.system_prompt)
+        agent = AgentService(config.agent, registry)
+        await agent.start()
+        async for chunk in agent.run(args.print, session):
+            print(chunk, end="", flush=True)
+        print()
+        await agent.stop()
+        return
 
     # Services
     wake_word = OpenWakeWordService(config.wake_word)
@@ -41,6 +55,7 @@ async def main() -> None:
 
     # Orchestrator
     orchestrator = Orchestrator(
+        args=args,
         config=config,
         wake_word=wake_word,
         audio_capture=audio_capture,
@@ -65,4 +80,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="AI Voice Assistant")
+    parser.add_argument("--no-wake-wait", action="store_true", help="Skip the waiting for wake word state")
+    parser.add_argument("--print", action="store", help="Get a single headless response from the agent")
+    args = parser.parse_args()
+    asyncio.run(main(args))

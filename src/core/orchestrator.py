@@ -21,6 +21,7 @@ class Orchestrator:
 
     def __init__(
         self,
+        args: dict,
         config: AppConfig,
         wake_word: WakeWordDetector,
         audio_capture: AudioCaptureService,
@@ -30,6 +31,7 @@ class Orchestrator:
         audio_playback: AudioPlaybackService,
         session: Session,
     ) -> None:
+        self._args = args
         self._config = config
         self._wake_word = wake_word
         self._audio_capture = audio_capture
@@ -95,6 +97,10 @@ class Orchestrator:
 
     async def _handle_waiting(self) -> None:
         """Listen for wake word on audio frames."""
+        if self._args.no_wake_wait:
+            logger.info("Skipping wake word wait...")
+            self._transition_to(AssistantState.LISTENING)
+            return
         logger.info("Waiting for wake word...")
         async for frame in self._audio_capture.stream_frames():
             if not self._running:
@@ -168,6 +174,7 @@ class Orchestrator:
         response_text = ""
         async for chunk in self._agent.run(self._pending_text, self._session):
             response_text += chunk
+            # TODO: Make agent speak as it streams instead of after it finishes
 
         self._pending_text = ""
 

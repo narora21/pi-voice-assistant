@@ -2,6 +2,8 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
+from ollama import AsyncClient
+
 from src.config.schema import AgentConfig
 from src.core.session import Message, Session
 from src.tools.registry import ToolRegistry
@@ -19,12 +21,10 @@ class AgentService:
     def __init__(self, config: AgentConfig, tool_registry: ToolRegistry) -> None:
         self._config = config
         self._tools = tool_registry
-        self._client: Any = None
+        self._client: AsyncClient | None = None
 
     async def start(self) -> None:
-        from ollama import AsyncClient
-
-        self._client = AsyncClient(host=self._config.base_url)
+        self._client = AsyncClient()
         logger.info(f"Agent initialized with model: {self._config.model}")
 
     async def stop(self) -> None:
@@ -51,34 +51,22 @@ class AgentService:
                     model=self._config.model,
                     messages=session.get_ollama_messages(),
                     tools=ollama_tools,
-                    stream=self._config.stream,
                     options={"temperature": self._config.temperature},
+                    stream=True,
                 )
             except Exception as e:
                 raise AgentError(f"Ollama chat failed: {e}") from e
 
-            if self._config.stream:
-                async for chunk in stream:
-                    if chunk.message.content:
-                        full_text += chunk.message.content
-                        yield chunk.message.content
-                    if chunk.message.tool_calls:
-                        for tc in chunk.message.tool_calls:
-                            tool_calls.append({
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            })
-            else:
-                # Non-streaming fallback
-                response = stream
-                if response.message.content:
-                    full_text = response.message.content
-                    yield full_text
-                if response.message.tool_calls:
-                    for tc in response.message.tool_calls:
+            async for chunk in stream:
+                if chunk["message"]["content"]:
+                    full_text += chunk["message"]["content"]
+                    yield chunk["message"]["content"]
+
+                if chunk["message"].get("tool_calls"):
+                    for tc in chunk["message"]["tool_calls"]:
                         tool_calls.append({
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
+                            "name": tc["function"]["name"],
+                            "arguments": tc["function"]["arguments"],
                         })
 
             # Record assistant message
