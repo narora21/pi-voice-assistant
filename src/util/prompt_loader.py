@@ -28,7 +28,8 @@ class PromptLoader:
         try:
             current_date = datetime.now().strftime("%B %d, %Y")
             reminders = [
-                PromptLoader._load_system_reminder("date_reminder", date=current_date)
+                PromptLoader._load_system_reminder("date_reminder", date=current_date),
+                PromptLoader._load_system_reminder("user_reminder", city="San Francisco", state="California"),
             ]
             sanitized_reminders = filter(lambda r: r is not None, reminders)
             return list(map(lambda r: f"<system-reminder>{r}</system-reminder>", sanitized_reminders))

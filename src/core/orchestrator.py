@@ -47,6 +47,7 @@ class Orchestrator:
         self._signal_bus = signal_bus
         self._state = AssistantState.WAITING
         self._running = False
+        self._skip_greeting = False
         self._pending_chunks: asyncio.Queue[str | None] = asyncio.Queue()
 
         # Temporary data passed between states
@@ -135,9 +136,14 @@ class Orchestrator:
         max_frames = int(10 * 1000 / self._config.audio.frame_duration_ms)  # 10s max
         silence_threshold = int(1.5 * 1000 / self._config.audio.frame_duration_ms)  # 1.5s silence
         speech_detected = False
-        await asyncio.sleep(0.3)
-        await self._playback.play(self.greeting_bytes)
 
+        if not self._skip_greeting:
+            await asyncio.sleep(0.3)
+            await self._playback.play(self.greeting_bytes)
+        self._skip_greeting = False
+
+        # Reset wake word detector to clear any stale audio state
+        await self._wake_word.reset()
         self._audio_capture.start_capture()
         async for frame in self._audio_capture.stream_frames():
             if not self._running:
@@ -238,6 +244,7 @@ class Orchestrator:
             self._session.end()
             self._transition_to(AssistantState.WAITING)
         elif self._session.is_active:
+            self._skip_greeting = True
             self._transition_to(AssistantState.LISTENING)
         else:
             self._transition_to(AssistantState.WAITING)

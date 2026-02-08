@@ -1,6 +1,6 @@
+# wake_word.py
 import asyncio
 import logging
-import os
 import platform
 from typing import Protocol
 
@@ -16,6 +16,7 @@ class WakeWordDetector(Protocol):
     async def start(self) -> None: ...
     async def stop(self) -> None: ...
     async def detect(self, audio_frame: np.ndarray) -> bool: ...
+    async def reset(self) -> None: ...
 
 
 class OpenWakeWordService:
@@ -28,7 +29,6 @@ class OpenWakeWordService:
         if platform.system() != "Linux":
             logger.info("Wake word disabled (not running on Linux).")
             self._disabled = True
-
 
     async def start(self) -> None:
         if self._disabled:
@@ -65,13 +65,22 @@ class OpenWakeWordService:
         self._model = None
         logger.info("Wake word model unloaded")
 
+    async def reset(self) -> None:
+        """Reset internal buffers to prevent false triggers."""
+        if self._model is None or self._disabled:
+            return
+        
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._model.reset)
+        logger.debug("Wake word model state reset")
+
     async def detect(self, audio_frame: np.ndarray) -> bool:
         if self._model is None or self._disabled:
             return False
 
         loop = asyncio.get_event_loop()
         prediction = await loop.run_in_executor(
-            None, self._model.predict, audio_frame  # type: ignore[union-attr]
+            None, self._model.predict, audio_frame
         )
 
         for name, score in prediction.items():
