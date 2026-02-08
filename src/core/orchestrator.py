@@ -59,6 +59,9 @@ class Orchestrator:
         await self._tts.start()
         await self._playback.start()
 
+        # Init sound bytes
+        self.greeting_bytes = await self._tts.synthesize(self._config.sound_bytes.greeting)
+
         self._running = True
         logger.info("Orchestrator started")
         await self._run_loop()
@@ -127,7 +130,7 @@ class Orchestrator:
         max_frames = int(10 * 1000 / self._config.audio.frame_duration_ms)  # 10s max
         silence_threshold = int(1.5 * 1000 / self._config.audio.frame_duration_ms)  # 1.5s silence
         speech_detected = False
-        #await self._playback.play_file('audio/jarvis.wav', 1.0 / self.config.audio.playback_volume)
+        await self._playback.play(self.greeting_bytes)
 
         self._audio_capture.start_capture()
         async for frame in self._audio_capture.stream_frames():
@@ -223,10 +226,11 @@ class Orchestrator:
         logger.info(f"Agent response: {response_text!r}")
         self._session.touch()
 
-        if self._session.is_active:
-            self._transition_to(AssistantState.LISTENING)
-        else:
-            self._transition_to(AssistantState.WAITING)
+        self._transition_to(AssistantState.WAITING)
+        #if self._session.is_active:
+        #    self._transition_to(AssistantState.LISTENING)
+        #else:
+        #    self._transition_to(AssistantState.WAITING)
 
 
     async def _synthesis_worker(self, audio_queue: asyncio.Queue[bytes | None]) -> None:

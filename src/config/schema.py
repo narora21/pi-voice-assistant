@@ -13,6 +13,11 @@ class WakeWordConfig:
 
 
 @dataclass(frozen=True)
+class SoundBytesConfig:
+    greeting: str = "Hello."
+
+
+@dataclass(frozen=True)
 class AudioConfig:
     sample_rate: int = 16000
     frame_duration_ms: int = 80
@@ -74,6 +79,7 @@ class LoggingConfig:
 @dataclass(frozen=True)
 class AppConfig:
     wake_word: WakeWordConfig = field(default_factory=WakeWordConfig)
+    sound_bytes: SoundBytesConfig = field(default_factory=SoundBytesConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
     stt: STTConfig = field(default_factory=STTConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)

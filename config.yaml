@@ -2,7 +2,10 @@ wake_word:
   model_name: "hey_jarvis_v0.1"
   models_path: "models/wake_word/"
   model_extension: "tflite"
-  threshold: 0.65
+  threshold: 0.5
+
+sound_bytes:
+  greeting: "What's up butter cup?"
 
 audio:
   sample_rate: 16000
@@ -22,7 +25,7 @@ stt:
   vad_filter: true
 
 agent:
-  model: "qwen2.5:1.5b"
+  model: "qwen2.5:0.5b"
   max_tool_rounds: 5
   temperature: 0.7
   stream: true
