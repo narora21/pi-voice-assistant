@@ -6,15 +6,13 @@ class AssistantState(Enum):
     LISTENING = auto()
     TRANSCRIBING = auto()
     THINKING = auto()
-    SPEAKING = auto()
 
 
 TRANSITIONS: dict[AssistantState, set[AssistantState]] = {
     AssistantState.WAITING: {AssistantState.LISTENING},
     AssistantState.LISTENING: {AssistantState.TRANSCRIBING, AssistantState.WAITING},
     AssistantState.TRANSCRIBING: {AssistantState.THINKING, AssistantState.WAITING},
-    AssistantState.THINKING: {AssistantState.SPEAKING, AssistantState.WAITING},
-    AssistantState.SPEAKING: {AssistantState.WAITING, AssistantState.LISTENING},
+    AssistantState.THINKING: {AssistantState.LISTENING, AssistantState.WAITING},
 }
 
 

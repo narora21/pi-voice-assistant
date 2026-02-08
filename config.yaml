@@ -35,6 +35,8 @@ tts:
   model_name: "en_GB-alan-medium"
   models_path: "models/tts/"
   model_extension: "onnx"
+  batch_min_chars: 20 
+  batch_max_chars: 100
   speaker_id: 0
   length_scale: 1.0
   noise_scale: 0.667

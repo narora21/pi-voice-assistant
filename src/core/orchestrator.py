@@ -12,6 +12,7 @@ from src.services.audio_playback import AudioPlaybackService
 from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import WakeWordDetector
+from src.util.chunk_batcher import ChunkBatcher
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class Orchestrator:
         self._session = session
         self._state = AssistantState.WAITING
         self._running = False
+        self._pending_chunks: asyncio.Queue[str | None] = asyncio.Queue()
 
         # Temporary data passed between states
         self._audio_buffer: np.ndarray | None = None
@@ -70,6 +72,12 @@ class Orchestrator:
         await self._stt.stop()
         await self._audio_capture.stop()
         await self._wake_word.stop()
+        try:
+            import sounddevice as sd
+            sd._terminate()
+            sd._initialize()
+        except:
+            logger.warning("Unable to force PortAudio to release device")
         logger.info("Orchestrator stopped")
 
     def _transition_to(self, target: AssistantState) -> None:
@@ -177,9 +185,32 @@ class Orchestrator:
             self._session.start(self._config.agent.system_prompt)
 
         response_text = ""
+        
+        audio_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+        playback_task = asyncio.create_task(self._playback_worker(audio_queue))
+        synthesis_task = asyncio.create_task(self._synthesis_worker(audio_queue))
+        
+        batcher = ChunkBatcher(
+            min_chars=self._config.tts.batch_min_chars,
+            max_chars=self._config.tts.batch_max_chars,
+        )
+        
         async for chunk in self._agent.run(self._pending_text, self._session):
             response_text += chunk
-            # TODO: Make agent speak as it streams instead of after it finishes
+            
+            for batch in batcher.add(chunk):
+                await self._pending_chunks.put(batch)
+        
+        # Flush remaining text
+        remaining = batcher.flush()
+        if remaining:
+            await self._pending_chunks.put(remaining)
+        
+        # Signal end
+        await self._pending_chunks.put(None)
+        
+        await synthesis_task
+        await playback_task
 
         self._pending_text = ""
 
@@ -189,20 +220,33 @@ class Orchestrator:
             return
 
         logger.info(f"Agent response: {response_text!r}")
-        self._pending_response = response_text
-        self._transition_to(AssistantState.SPEAKING)
-
-    async def _handle_speaking(self) -> None:
-        """Synthesize and play the response."""
-        audio_bytes = await self._tts.synthesize(self._pending_response)
-        self._pending_response = ""
-
-        if audio_bytes:
-            await self._playback.play(audio_bytes)
-
         self._session.touch()
 
         if self._session.is_active:
             self._transition_to(AssistantState.LISTENING)
         else:
             self._transition_to(AssistantState.WAITING)
+
+
+    async def _synthesis_worker(self, audio_queue: asyncio.Queue[bytes | None]) -> None:
+        """Synthesize text chunks and queue audio for playback."""
+        while True:
+            text_chunk = await self._pending_chunks.get()
+            if text_chunk is None:
+                # Signal playback worker to stop
+                await audio_queue.put(None)
+                return
+            
+            audio_bytes = await self._tts.synthesize(text_chunk)
+            if audio_bytes:
+                await audio_queue.put(audio_bytes)
+
+
+    async def _playback_worker(self, audio_queue: asyncio.Queue[bytes | None]) -> None:
+        """Play audio chunks as they become available."""
+        while True:
+            audio_bytes = await audio_queue.get()
+            if audio_bytes is None:
+                return
+            
+            await self._playback.play(audio_bytes)

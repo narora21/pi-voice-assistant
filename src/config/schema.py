@@ -49,6 +49,8 @@ class TTSConfig:
     model_name: str = "en_US-lessac-medium"
     models_path: str = "models/tts/en_US-lessac-medium"
     model_extension: str = "onnx"
+    batch_min_chars: int = 50   # Don't speak until at least this many chars
+    batch_max_chars: int = 200  # Force speak at this limit
     speaker_id: int = 0
     length_scale: float = 1.0
     noise_scale: float = 0.667
