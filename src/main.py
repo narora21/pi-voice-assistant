@@ -1,13 +1,14 @@
 import argparse
 import asyncio
 import logging
+import platform
 import signal
 
 from src.config.loader import load_config
 from src.core.orchestrator import Orchestrator
 from src.core.session import Session
 from src.services.agent import AgentService
-from src.services.audio_capture import MockAudioCaptureService
+from src.services.audio_capture import LiveAudioCaptureService, MockAudioCaptureService
 from src.services.audio_playback import MockAudioPlaybackService
 from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
@@ -44,7 +45,10 @@ async def main(args) -> None:
 
     # Services
     wake_word = OpenWakeWordService(config.wake_word)
-    audio_capture = MockAudioCaptureService(config.audio)
+    if platform.system() == "Linux":
+        audio_capture = LiveAudioCaptureService(config.audio)
+    else:
+        audio_capture = MockAudioCaptureService(config.audio)
     stt = SpeechToTextService(config.stt)
     agent = AgentService(config.agent, registry)
     tts = TextToSpeechService(config.tts)

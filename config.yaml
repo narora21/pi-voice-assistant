@@ -8,6 +8,7 @@ audio:
   sample_rate: 16000
   frame_duration_ms: 80
   channels: 1
+  device: "USB PnP Audio Device"
 
 stt:
   model_size: "base.en"

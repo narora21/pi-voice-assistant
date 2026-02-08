@@ -15,6 +15,7 @@ class AudioConfig:
     sample_rate: int = 16000
     frame_duration_ms: int = 80
     channels: int = 1
+    device: str | None = None
 
 
 @dataclass(frozen=True)

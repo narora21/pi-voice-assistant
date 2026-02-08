@@ -31,6 +31,14 @@ if [ ! -d ".venv" ]; then
 fi
 
 # -----------------------------
+# System dependencies (Linux)
+# -----------------------------
+if [[ "$(uname)" == "Linux" ]] && ! dpkg -s libportaudio2 &>/dev/null; then
+    echo "Installing libportaudio2 (required for audio capture)..."
+    sudo apt-get install -y libportaudio2
+fi
+
+# -----------------------------
 # Install dependencies
 # -----------------------------
 echo "Syncing dependencies..."
