@@ -9,6 +9,7 @@ audio:
   frame_duration_ms: 80
   channels: 1
   device: "USB PnP Audio Device"
+  energy_threshold: 500
 
 stt:
   model_size: "base.en"

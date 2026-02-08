@@ -16,6 +16,7 @@ class AudioConfig:
     frame_duration_ms: int = 80
     channels: int = 1
     device: str | None = None
+    energy_threshold: int = 500 # For silence sound threshold
 
 
 @dataclass(frozen=True)

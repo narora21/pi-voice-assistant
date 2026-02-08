@@ -116,21 +116,21 @@ class Orchestrator:
         silence_frames = 0
         max_frames = int(10 * 1000 / self._config.audio.frame_duration_ms)  # 10s max
         silence_threshold = int(1.5 * 1000 / self._config.audio.frame_duration_ms)  # 1.5s silence
-        energy_threshold = 500  # RMS threshold for speech detection
         speech_detected = False
 
+        self._audio_capture.start_capture()
         async for frame in self._audio_capture.stream_frames():
             if not self._running:
                 return
 
             frames.append(frame)
-            rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2))
 
-            if rms > energy_threshold:
+            # Detect silence
+            if self._audio_capture.is_silent_frame(frame):
+                silence_frames += 1
+            else:
                 speech_detected = True
                 silence_frames = 0
-            else:
-                silence_frames += 1
 
             # End on silence after speech
             if speech_detected and silence_frames >= silence_threshold:
@@ -139,6 +139,7 @@ class Orchestrator:
             # Timeout with no speech
             if len(frames) >= max_frames:
                 break
+        self._audio_capture.stop_capture()
 
         if not speech_detected:
             logger.info("No speech detected, returning to WAITING")
@@ -153,6 +154,8 @@ class Orchestrator:
         if self._audio_buffer is None:
             self._transition_to(AssistantState.WAITING)
             return
+        
+        logger.info("Transcribing speech input...")
 
         text = await self._stt.transcribe(self._audio_buffer)
         self._audio_buffer = None

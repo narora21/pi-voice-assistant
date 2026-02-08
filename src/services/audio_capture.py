@@ -77,8 +77,6 @@ class LiveAudioCaptureService:
                 dtype="int16",
                 callback=_audio_callback,
             )
-            self._stream.start()
-            self._running = True
             logger.info(
                 "LiveAudioCapture started (device=%s, rate=%d, frame_size=%d)",
                 device,
@@ -90,20 +88,41 @@ class LiveAudioCaptureService:
             raise
 
     async def stop(self) -> None:
-        self._running = False
         if self._stream is not None:
-            self._stream.stop()
             self._stream.close()
             self._stream = None
         await self._queue.put(None)
         logger.info("LiveAudioCapture stopped")
 
     async def stream_frames(self) -> AsyncIterator[np.ndarray]:
+        if not self._running:
+            logger.warning("Cannot stream audio capture frames, stream must be started first")
         while self._running:
             frame = await self._queue.get()
             if frame is None:
                 return
             yield frame
+    
+    def start_capture(self) -> None:
+        if self._stream is None:
+            logging.warning("Audio input stream is None")
+            return
+        # Empty the queue
+        while not self._queue.empty():
+            try:
+                item = self._queue.get_nowait()
+                self._queue.task_done()
+            except asyncio.QueueEmpty:
+                break
+        self._stream.start()
+        self._running = True
+    
+    def stop_capture(self) -> None:
+        if self._stream is None:
+            logging.warning("Audio input stream is None")
+            return
+        self._running = False
+        self._stream.stop()
 
     def _resolve_device(self, sd: object) -> int | None:
         """Resolve config device string to a sounddevice device index."""
@@ -121,3 +140,9 @@ class LiveAudioCaptureService:
         raise RuntimeError(
             f"Audio device not found: {device_str!r}. Available devices: {available}"
         )
+    
+    def is_silent_frame(self, frame: np.ndarray):
+        # RMS threshold for speech detection (silence threshold)
+        energy_threshold = self._config.energy_threshold
+        rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2))
+        return rms <= energy_threshold
