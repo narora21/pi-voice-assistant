@@ -3,6 +3,9 @@
 .venv/
 venv/
 
+# Config
+config.yaml
+
 # Python
 __pycache__/
 *.py[cod]

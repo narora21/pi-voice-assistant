@@ -30,13 +30,18 @@ class AgentService:
         await self._warmup()
 
     async def _warmup(self) -> None:
-        """Send a minimal request to load the model into memory, avoiding cold start."""
+        """Send a request with the full system prompt and tools to prime the KV cache."""
         logger.info(f"Warming up model: {self._config.model}")
         start = time.monotonic()
         try:
+            ollama_tools = self._tools.to_ollama_tools() or None
             await self._client.chat(
                 model=self._config.model,
-                messages=[{"role": "user", "content": "hi"}],
+                messages=[
+                    {"role": "system", "content": self._config.system_prompt},
+                    {"role": "user", "content": "hi"},
+                ],
+                tools=ollama_tools,
                 options={"num_predict": 1},
             )
             elapsed = time.monotonic() - start
@@ -71,7 +76,11 @@ class AgentService:
                     model=self._config.model,
                     messages=session.get_ollama_messages(),
                     tools=ollama_tools,
-                    options={"temperature": self._config.temperature},
+                    options={
+                        "temperature": self._config.temperature,
+                        "num_ctx": self._config.num_ctx,
+                        "num_thread": self._config.num_thread,
+                    },
                     stream=True,
                 )
             except Exception as e:
