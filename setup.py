@@ -1,8 +1,58 @@
 import platform
+from pathlib import Path
 
 from src.config.loader import load_config
-from src.config.schema import AppConfig, AudioConfig, WakeWordConfig
+from src.config.schema import AppConfig, AudioConfig, TTSConfig, WakeWordConfig
 from src.config.utils import get_wake_word_model_dir
+
+# Piper model URLs from https://github.com/rhasspy/piper/blob/master/VOICES.md
+PIPER_MODELS = {
+    "en_US-lessac-medium": {
+        "onnx": "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+        "json": "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json",
+    },
+    "en_US-amy-medium": {
+        "onnx": "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx",
+        "json": "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json",
+    },
+}
+
+
+def download_tts_model(config: TTSConfig):
+    """Download Piper TTS model if not present."""
+    import urllib.request
+
+    model_path = Path(config.model_path)
+    json_path = Path(f"{config.model_path}.json")
+
+    # Extract model name from path (e.g., "models/tts/en_US-lessac-medium.onnx" -> "en_US-lessac-medium")
+    model_name = model_path.stem  # removes .onnx
+
+    if model_name not in PIPER_MODELS:
+        print(f"Unknown Piper model: {model_name}. Skipping download.")
+        print(f"Available models: {list(PIPER_MODELS.keys())}")
+        return
+
+    urls = PIPER_MODELS[model_name]
+
+    # Create directory if needed
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Download ONNX model
+    if not model_path.exists():
+        print(f"Downloading Piper model: {model_name}...")
+        urllib.request.urlretrieve(urls["onnx"], model_path)
+        print(f"  Saved to {model_path}")
+    else:
+        print(f"Piper model already exists: {model_path}")
+
+    # Download JSON config
+    if not json_path.exists():
+        print(f"Downloading Piper model config...")
+        urllib.request.urlretrieve(urls["json"], json_path)
+        print(f"  Saved to {json_path}")
+    else:
+        print(f"Piper config already exists: {json_path}")
 
 
 def download_wake_word_model(config: WakeWordConfig):
@@ -46,6 +96,7 @@ def verify_audio_device(config: AudioConfig):
 def main() -> None:
     config: AppConfig = load_config()
     download_wake_word_model(config.wake_word)
+    download_tts_model(config.tts)
     verify_audio_device(config.audio)
 
 
