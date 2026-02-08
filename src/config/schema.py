@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class WakeWordConfig:
-    model_name: str = "hey_jarvis"
-    models_dir: str = "models/wake_word/"
+    model_name: str = "hey_jarvis_v0.1"
+    models_path: str = "models/wake_word/"
+    model_extension: str = "tflite"
     threshold: float = 0.5
     vad_threshold: float | None = None
 
