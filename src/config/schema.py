@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.config.prompt_loader import PromptLoader
+from src.util.prompt_loader import PromptLoader
 
 
 @dataclass(frozen=True)

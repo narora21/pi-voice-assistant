@@ -30,7 +30,7 @@ class AgentService:
         await self._warmup()
 
     async def _warmup(self) -> None:
-        """Send a minimal request to load the model into memory."""
+        """Send a minimal request to load the model into memory, avoiding cold start."""
         logger.info(f"Warming up model: {self._config.model}")
         start = time.monotonic()
         try:
@@ -52,6 +52,9 @@ class AgentService:
         Run the agent loop. Yields text chunks as they stream.
         Tool calls are handled internally and invisible to the caller.
         """
+        start = time.monotonic()
+        elapsed = None
+
         if self._client is None:
             raise AgentError("Agent not started")
 
@@ -75,6 +78,8 @@ class AgentService:
                 raise AgentError(f"Ollama chat failed: {e}") from e
 
             async for chunk in stream:
+                if elapsed is None:
+                    elapsed = time.monotonic() - start
                 if chunk["message"]["content"]:
                     full_text += chunk["message"]["content"]
                     yield chunk["message"]["content"]
@@ -82,6 +87,8 @@ class AgentService:
                 if chunk["message"].get("tool_calls"):
                     for tc in chunk["message"]["tool_calls"]:
                         tool_calls.append(tc)
+            
+            logger.info(f"\nTime to first token (TTF): {elapsed} s")
 
             # Record assistant message
             session.add_message(Message(
@@ -91,6 +98,7 @@ class AgentService:
             ))
 
             if not tool_calls:
+                logger.info("No tool calls, ending agent stream")
                 break
 
             # Execute tool calls and feed results back

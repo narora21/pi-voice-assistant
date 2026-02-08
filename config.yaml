@@ -23,7 +23,7 @@ stt:
 
 agent:
   model: "qwen2.5:1.5b"
-  max_tool_rounds: 5
+  max_tool_rounds: 10
   temperature: 0.7
   stream: true
 
@@ -32,7 +32,7 @@ tts:
   models_path: "models/tts/"
   model_extension: "onnx"
   batch_min_chars: 20 
-  batch_max_chars: 100
+  batch_max_chars: 50
   speaker_id: 0
   length_scale: 1.0
   noise_scale: 0.667

@@ -43,7 +43,6 @@ async def main(args) -> None:
         await agent.start()
         async for chunk in agent.run(args.print, session):
             print(chunk, end="", flush=True)
-        print()
         await agent.stop()
         return
 

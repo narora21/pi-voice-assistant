@@ -127,6 +127,7 @@ class Orchestrator:
         max_frames = int(10 * 1000 / self._config.audio.frame_duration_ms)  # 10s max
         silence_threshold = int(1.5 * 1000 / self._config.audio.frame_duration_ms)  # 1.5s silence
         speech_detected = False
+        #await self._playback.play_file('audio/jarvis.wav', 1.0 / self.config.audio.playback_volume)
 
         self._audio_capture.start_capture()
         async for frame in self._audio_capture.stream_frames():
