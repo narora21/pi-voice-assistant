@@ -30,7 +30,7 @@ async def main(args) -> None:
 
     # Tool registry
     registry = ToolRegistry()
-    registry.register(DeviceControlTool())
+    #registry.register(DeviceControlTool())
     registry.register(WebFetchTool())
     registry.register(WebSearchTool(secrets.brave_search_api_key))
 

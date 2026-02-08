@@ -25,7 +25,7 @@ class WebSearchTool:
             name="web_search",
             description=(
                 "Search the web for current information based on a query. "
-                "Use this for recent events, news, or facts you're unsure about."
+                "Use this for recent events, news, or facts you're unsure about. "
             ),
             parameters=[
                 ToolParameter(
