@@ -7,6 +7,7 @@ from typing import Protocol
 import numpy as np
 
 from src.config.schema import WakeWordConfig
+from src.config.utils import get_wake_word_model_path, get_wake_word_melspec_path, get_wake_word_embedding_path
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,17 @@ class OpenWakeWordService:
             logger.error(f"Unable to import open wake word model on platform {platform.system()}")
             raise e
 
-        model_path = os.path.join(self._config.models_dir, self._config.model_name)
-        model_args = dict()
+        model_path = get_wake_word_model_path(self._config)
+        melspec_path = get_wake_word_melspec_path(self._config)
+        embedding_path = get_wake_word_embedding_path(self._config)
+        model_args = {
+            "melspec_model_path": melspec_path,
+            "embedding_model_path": embedding_path
+        }
         if self._config.vad_threshold:
-            model_args = { "vad_threshold": self._config.vad_threshold }
+            model_args["vad_threshold"] = self._config.vad_threshold
+
+        logger.info(f"Wake word model loading: {model_path}")
         loop = asyncio.get_event_loop()
         self._model = await loop.run_in_executor(
             None,
@@ -51,7 +59,7 @@ class OpenWakeWordService:
                 **model_args
             ),
         )
-        logger.info(f"Wake word model loaded: {self._config.model_name}")
+        logger.info(f"Wake word model loaded: {model_path}")
 
     async def stop(self) -> None:
         self._model = None

@@ -1,6 +1,7 @@
 wake_word:
-  model_name: "hey_jarvis_v0.1.tflite"
-  models_dir: "models/wake_word/"
+  model_name: "hey_jarvis_v0.1"
+  models_path: "models/wake_word/"
+  model_extension: "tflite"
   threshold: 0.5
 
 audio:
