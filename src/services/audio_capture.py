@@ -109,11 +109,11 @@ class LiveAudioCaptureService:
 
         devices = sd.query_devices()
         for i, dev in enumerate(devices):
-            if device_str.lower() in dev["name"].lower() and dev["max_input_channels"] > 0:
+            if device_str.lower() in dev["name"].lower():
                 logger.info("Matched audio device: [%d] %s", i, dev["name"])
                 return i
 
-        available = [d["name"] for d in devices if d["max_input_channels"] > 0]
+        available = [d["name"] for d in devices]
         raise RuntimeError(
-            f"Audio device not found: {device_str!r}. Available input devices: {available}"
+            f"Audio device not found: {device_str!r}. Available devices: {available}"
         )

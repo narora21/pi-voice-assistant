@@ -85,11 +85,11 @@ def verify_audio_device(config: AudioConfig):
 
     devices = sd.query_devices()
     for i, dev in enumerate(devices):
-        if config.device.lower() in dev["name"].lower() and dev["max_input_channels"] > 0:
+        if config.device.lower() in dev["name"].lower():
             print(f"Audio device found: [{i}] {dev['name']}")
             return
 
-    available = [d["name"] for d in devices if d["max_input_channels"] > 0]
+    available = [d["name"] for d in devices]
     print(f"WARNING: Audio device '{config.device}' not found. Available: {available}")
 
 
