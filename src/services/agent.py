@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -26,6 +27,22 @@ class AgentService:
     async def start(self) -> None:
         self._client = AsyncClient()
         logger.info(f"Agent initialized with model: {self._config.model}")
+        await self._warmup()
+
+    async def _warmup(self) -> None:
+        """Send a minimal request to load the model into memory."""
+        logger.info(f"Warming up model: {self._config.model}")
+        start = time.monotonic()
+        try:
+            await self._client.chat(
+                model=self._config.model,
+                messages=[{"role": "user", "content": "hi"}],
+                options={"num_predict": 1},
+            )
+            elapsed = time.monotonic() - start
+            logger.info(f"Model warmup completed in {elapsed:.1f}s")
+        except Exception:
+            logger.warning("Model warmup failed — first request may be slow", exc_info=True)
 
     async def stop(self) -> None:
         self._client = None
