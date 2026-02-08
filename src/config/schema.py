@@ -15,8 +15,10 @@ class AudioConfig:
     sample_rate: int = 16000
     frame_duration_ms: int = 80
     channels: int = 1
-    device: str | None = None
+    capture_device: str | None = None
+    playback_device: str | None = None
     energy_threshold: int = 500 # For silence sound threshold
+    playback_volume: int = 0.5 # Between 0-1 (above 1 may cause distortion)
 
 
 @dataclass(frozen=True)
@@ -44,7 +46,9 @@ class AgentConfig:
 
 @dataclass(frozen=True)
 class TTSConfig:
-    model_path: str = "models/tts/en_US-lessac-medium.onnx"
+    model_name: str = "en_US-lessac-medium"
+    models_path: str = "models/tts/en_US-lessac-medium"
+    model_extension: str = "onnx"
     speaker_id: int = 0
     length_scale: float = 1.0
     noise_scale: float = 0.667

@@ -8,8 +8,10 @@ audio:
   sample_rate: 16000
   frame_duration_ms: 80
   channels: 1
-  device: "USB PnP Audio Device"
+  capture_device: "USB PnP Audio Device"
+  playback_device: "USB PnP Audio Device"
   energy_threshold: 500
+  playback_volume: 0.75
 
 stt:
   model_size: "base.en"
@@ -30,7 +32,9 @@ agent:
   stream: true
 
 tts:
-  model_path: "models/tts/en_US-lessac-medium.onnx"
+  model_name: "en_GB-alan-medium"
+  models_path: "models/tts/"
+  model_extension: "onnx"
   speaker_id: 0
   length_scale: 1.0
   noise_scale: 0.667

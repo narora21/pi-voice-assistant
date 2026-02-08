@@ -9,7 +9,7 @@ from src.core.orchestrator import Orchestrator
 from src.core.session import Session
 from src.services.agent import AgentService
 from src.services.audio_capture import LiveAudioCaptureService, MockAudioCaptureService
-from src.services.audio_playback import MockAudioPlaybackService
+from src.services.audio_playback import LiveAudioPlaybackService, MockAudioPlaybackService
 from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import OpenWakeWordService
@@ -56,7 +56,10 @@ async def main(args) -> None:
     stt = SpeechToTextService(config.stt)
     agent = AgentService(config.agent, registry)
     tts = TextToSpeechService(config.tts)
-    audio_playback = MockAudioPlaybackService()
+    if platform.system() == "Linux":
+        audio_playback = LiveAudioPlaybackService(config.audio)
+    else:
+        audio_playback = MockAudioPlaybackService()
 
     # Session
     session = Session(config.session)

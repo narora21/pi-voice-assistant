@@ -148,7 +148,7 @@ class LiveAudioCaptureService:
 
     def _resolve_device(self, sd: object) -> int | None:
         """Resolve config device string to a sounddevice device index."""
-        device_str = self._config.device
+        device_str = self._config.capture_device
         if device_str is None:
             return None
 
