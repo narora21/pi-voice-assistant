@@ -61,6 +61,7 @@ class Orchestrator:
 
         # Init sound bytes
         self.greeting_bytes = await self._tts.synthesize(self._config.sound_bytes.greeting)
+        self.thinking_bytes = await self._tts.synthesize(self._config.sound_bytes.thinking)
 
         self._running = True
         logger.info("Orchestrator started")
@@ -130,6 +131,7 @@ class Orchestrator:
         max_frames = int(10 * 1000 / self._config.audio.frame_duration_ms)  # 10s max
         silence_threshold = int(1.5 * 1000 / self._config.audio.frame_duration_ms)  # 1.5s silence
         speech_detected = False
+        await asyncio.sleep(0.3)
         await self._playback.play(self.greeting_bytes)
 
         self._audio_capture.start_capture()
@@ -170,6 +172,7 @@ class Orchestrator:
             return
         
         logger.info("Transcribing speech input...")
+        await self._playback.play(self.thinking_bytes)
 
         text = await self._stt.transcribe(self._audio_buffer)
         self._audio_buffer = None

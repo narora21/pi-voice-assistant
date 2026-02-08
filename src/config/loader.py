@@ -9,6 +9,7 @@ from src.config.schema import (
     AgentConfig,
     AppConfig,
     AudioConfig,
+    SoundBytesConfig,
     LoggingConfig,
     SessionConfig,
     STTConfig,
@@ -19,6 +20,7 @@ from src.config.secrets import Secrets, load_secrets
 
 _SECTION_CLASSES = {
     "wake_word": WakeWordConfig,
+    "sound_bytes": SoundBytesConfig,
     "audio": AudioConfig,
     "stt": STTConfig,
     "agent": AgentConfig,

@@ -15,6 +15,7 @@ class WakeWordConfig:
 @dataclass(frozen=True)
 class SoundBytesConfig:
     greeting: str = "Hello."
+    thinking: str = "One moment please."
 
 
 @dataclass(frozen=True)
