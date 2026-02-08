@@ -1,13 +1,16 @@
 from typing import Any
 
+from src.core.signal_bus import SignalBus
 from src.tools.base import ToolDefinition
+
+END_CONVERSATION = "end_conversation"
 
 
 class EndConversationTool:
     """Tool that lets the agent signal the conversation is over."""
 
-    def __init__(self) -> None:
-        self.triggered = False
+    def __init__(self, signal_bus: SignalBus) -> None:
+        self._bus = signal_bus
 
     @property
     def definition(self) -> ToolDefinition:
@@ -17,8 +20,5 @@ class EndConversationTool:
         )
 
     async def execute(self, **kwargs: Any) -> str:
-        self.triggered = True
+        self._bus.emit(END_CONVERSATION)
         return "Conversation ended."
-
-    def reset(self) -> None:
-        self.triggered = False

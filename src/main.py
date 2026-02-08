@@ -7,6 +7,7 @@ import signal
 from src.config.loader import load_config
 from src.core.orchestrator import Orchestrator
 from src.core.session import Session
+from src.core.signal_bus import SignalBus
 from src.services.agent import AgentService
 from src.services.audio_capture import LiveAudioCaptureService, MockAudioCaptureService
 from src.services.audio_playback import LiveAudioPlaybackService, MockAudioPlaybackService
@@ -29,11 +30,11 @@ async def main(args) -> None:
 
     logger.info("Starting Pi Voice Assistant")
 
-    # Tool registry
+    # Signal bus + tool registry
+    signal_bus = SignalBus()
     registry = ToolRegistry()
     #registry.register(DeviceControlTool())
-    end_conversation = EndConversationTool()
-    registry.register(end_conversation)
+    registry.register(EndConversationTool(signal_bus))
     registry.register(WebFetchTool())
     registry.register(WebSearchTool(secrets.brave_search_api_key))
 
@@ -77,7 +78,7 @@ async def main(args) -> None:
         tts=tts,
         audio_playback=audio_playback,
         session=session,
-        end_conversation=end_conversation,
+        signal_bus=signal_bus,
     )
 
     # Graceful shutdown on SIGINT/SIGTERM
