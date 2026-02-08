@@ -65,8 +65,9 @@ class TTSConfig:
 
 @dataclass(frozen=True)
 class SessionConfig:
-    idle_timeout_seconds: float = 30.0
+    idle_timeout_seconds: float = 60.0
     max_history_messages: int = 50
+    include_system_reminders: bool = True
 
 
 @dataclass(frozen=True)
