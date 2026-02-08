@@ -1,3 +1,4 @@
+# src/config/loader.py
 import os
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from src.config.schema import (
     TTSConfig,
     WakeWordConfig,
 )
+from src.config.secrets import Secrets, load_secrets
 
 _SECTION_CLASSES = {
     "wake_word": WakeWordConfig,
@@ -30,21 +32,6 @@ _ENV_OVERRIDES: dict[str, tuple[str, str]] = {
 }
 
 
-def _load_env(path: Path) -> None:
-    """Parse a .env file and set values into os.environ."""
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        key, _, value = line.partition("=")
-        key = key.strip()
-        value = value.strip().strip("\"'")
-        if key:
-            os.environ.setdefault(key, value)
-
-
 def _apply_env_overrides(data: dict[str, Any]) -> None:
     """Override YAML values with environment variables where mapped."""
     for env_var, (section, key) in _ENV_OVERRIDES.items():
@@ -56,9 +43,9 @@ def _apply_env_overrides(data: dict[str, Any]) -> None:
 def load_config(
     config_path: Path = Path("config.yaml"),
     env_path: Path = Path(".env"),
-) -> AppConfig:
-    """Load YAML config, merge .env overrides, return frozen AppConfig."""
-    _load_env(env_path)
+) -> tuple[AppConfig, Secrets]:
+    """Load YAML config and secrets, return both."""
+    secrets = load_secrets(env_path)
 
     data: dict[str, Any] = {}
     if config_path.exists():
@@ -75,4 +62,4 @@ def load_config(
         else:
             sections[name] = cls()
 
-    return AppConfig(**sections)
+    return AppConfig(**sections), secrets

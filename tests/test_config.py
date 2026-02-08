@@ -11,7 +11,7 @@ from src.config.schema import AppConfig
 
 def test_load_default_config():
     """Loading with no files produces valid defaults."""
-    config = load_config(
+    config, _ = load_config(
         config_path=Path("/nonexistent/config.yaml"),
         env_path=Path("/nonexistent/.env"),
     )
@@ -32,7 +32,7 @@ def test_load_yaml_config():
         tmp_path = Path(f.name)
 
     try:
-        config = load_config(config_path=tmp_path, env_path=Path("/nonexistent/.env"))
+        config, _ = load_config(config_path=tmp_path, env_path=Path("/nonexistent/.env"))
         assert config.agent.model == "llama3.2:3b"
         assert config.agent.temperature == 0.5
         assert config.stt.model_size == "tiny.en"
@@ -46,7 +46,7 @@ def test_env_override(monkeypatch):
     """Environment variables override YAML values."""
     sys_prompt = "You are a helpful assistant"
     monkeypatch.setenv("AGENT_SYSTEM_PROMPT", sys_prompt)
-    config = load_config(
+    config, _ = load_config(
         config_path=Path("/nonexistent/config.yaml"),
         env_path=Path("/nonexistent/.env"),
     )
@@ -62,7 +62,7 @@ def test_load_env_file():
     # Clear any existing env var so .env file takes effect
     old_val = os.environ.pop("AGENT_SYSTEM_PROMPT", None)
     try:
-        config = load_config(
+        config, _ = load_config(
             config_path=Path("/nonexistent/config.yaml"),
             env_path=env_path,
         )
@@ -77,7 +77,7 @@ def test_load_env_file():
 
 def test_frozen_config():
     """Config dataclasses are immutable."""
-    config = load_config(
+    config, _ = load_config(
         config_path=Path("/nonexistent/config.yaml"),
         env_path=Path("/nonexistent/.env"),
     )
