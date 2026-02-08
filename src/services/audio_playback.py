@@ -103,6 +103,40 @@ class LiveAudioPlaybackService:
 
         await self._loop.run_in_executor(None, _play_blocking)
 
+    
+    async def play_file(self, path: str, volume: float = 1.0) -> None:
+        """Play a WAV file at its native sample rate."""
+        import wave
+        import numpy as np
+        import sounddevice as sd
+
+        with wave.open(path, "rb") as wav:
+            if wav.getsampwidth() != 2:
+                raise ValueError("Only 16-bit WAV files supported")
+            
+            channels = wav.getnchannels()
+            sample_rate = wav.getframerate()
+            frames = wav.readframes(wav.getnframes())
+        
+        audio = np.frombuffer(frames, dtype=np.int16).astype(np.float32)
+        
+        # Convert stereo to mono if needed
+        if channels == 2:
+            audio = audio.reshape(-1, 2).mean(axis=1)
+        
+        # Apply volume scaling
+        volume *= self._volume
+        volume = max(0.0, min(1.0, volume))
+        audio = audio * volume
+        
+        audio = np.clip(audio, -32768, 32767).astype(np.int16)
+        
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: sd.play(audio, samplerate=sample_rate, blocking=True)
+        )
+
 
     def _resolve_device(self, sd: object) -> int | None:
         """

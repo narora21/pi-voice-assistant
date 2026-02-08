@@ -13,3 +13,8 @@ Stack:
 
 ## Running unit tests
 uv run python -m pytest
+
+### To Do
+Transition to a stopped state conditionally
+Find better sfx for state transitions
+Debug time to first token being slow
