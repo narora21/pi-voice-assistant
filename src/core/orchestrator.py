@@ -102,12 +102,14 @@ class Orchestrator:
             self._transition_to(AssistantState.LISTENING)
             return
         logger.info("Waiting for wake word...")
+        self._audio_capture.start_capture()
         async for frame in self._audio_capture.stream_frames():
             if not self._running:
-                return
+                break
             if await self._wake_word.detect(frame):
                 self._transition_to(AssistantState.LISTENING)
-                return
+                break
+        self._audio_capture.stop_capture()
 
     async def _handle_listening(self) -> None:
         """Capture audio until silence or timeout."""
