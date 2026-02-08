@@ -3,6 +3,9 @@
 .venv/
 venv/
 
+# Config
+config.yaml
+
 # Python
 __pycache__/
 *.py[cod]
@@ -29,6 +32,3 @@ Thumbs.db
 
 # uv
 uv.lock
-
-# Data
-prompts/

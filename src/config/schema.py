@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.config.prompt_loader import PromptLoader
+from src.util.prompt_loader import PromptLoader
 
 
 @dataclass(frozen=True)
@@ -40,6 +40,8 @@ class AgentConfig:
     max_tool_rounds: int = 5
     temperature: float = 0.7
     stream: bool = True
+    num_ctx: int = 2048
+    num_thread: int = 4
 
 
 @dataclass(frozen=True)

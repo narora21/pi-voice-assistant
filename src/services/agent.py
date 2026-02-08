@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -26,6 +27,27 @@ class AgentService:
     async def start(self) -> None:
         self._client = AsyncClient()
         logger.info(f"Agent initialized with model: {self._config.model}")
+        await self._warmup()
+
+    async def _warmup(self) -> None:
+        """Send a request with the full system prompt and tools to prime the KV cache."""
+        logger.info(f"Warming up model: {self._config.model}")
+        start = time.monotonic()
+        try:
+            ollama_tools = self._tools.to_ollama_tools() or None
+            await self._client.chat(
+                model=self._config.model,
+                messages=[
+                    {"role": "system", "content": self._config.system_prompt},
+                    {"role": "user", "content": "hi"},
+                ],
+                tools=ollama_tools,
+                options={"num_predict": 1},
+            )
+            elapsed = time.monotonic() - start
+            logger.info(f"Model warmup completed in {elapsed:.1f}s")
+        except Exception:
+            logger.warning("Model warmup failed — first request may be slow", exc_info=True)
 
     async def stop(self) -> None:
         self._client = None
@@ -35,6 +57,9 @@ class AgentService:
         Run the agent loop. Yields text chunks as they stream.
         Tool calls are handled internally and invisible to the caller.
         """
+        start = time.monotonic()
+        elapsed = None
+
         if self._client is None:
             raise AgentError("Agent not started")
 
@@ -51,13 +76,19 @@ class AgentService:
                     model=self._config.model,
                     messages=session.get_ollama_messages(),
                     tools=ollama_tools,
-                    options={"temperature": self._config.temperature},
+                    options={
+                        "temperature": self._config.temperature,
+                        "num_ctx": self._config.num_ctx,
+                        "num_thread": self._config.num_thread,
+                    },
                     stream=True,
                 )
             except Exception as e:
                 raise AgentError(f"Ollama chat failed: {e}") from e
 
             async for chunk in stream:
+                if elapsed is None:
+                    elapsed = time.monotonic() - start
                 if chunk["message"]["content"]:
                     full_text += chunk["message"]["content"]
                     yield chunk["message"]["content"]
@@ -65,6 +96,8 @@ class AgentService:
                 if chunk["message"].get("tool_calls"):
                     for tc in chunk["message"]["tool_calls"]:
                         tool_calls.append(tc)
+            
+            logger.info(f"\nTime to first token (TTF): {elapsed} s")
 
             # Record assistant message
             session.add_message(Message(
@@ -74,6 +107,7 @@ class AgentService:
             ))
 
             if not tool_calls:
+                logger.info("No tool calls, ending agent stream")
                 break
 
             # Execute tool calls and feed results back

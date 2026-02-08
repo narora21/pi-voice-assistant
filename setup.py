@@ -106,8 +106,31 @@ def verify_audio_device(device: str):
     print(f"WARNING: Audio device '{device}' not found. Available: {available}")
 
 
+def pull_ollama_model(model: str):
+    """Ensure the Ollama model is pulled before first use."""
+    import subprocess
+
+    print(f"Ensuring Ollama model is available: {model}")
+    try:
+        result = subprocess.run(
+            ["ollama", "pull", model],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if result.returncode == 0:
+            print(f"Ollama model ready: {model}")
+        else:
+            print(f"WARNING: ollama pull failed: {result.stderr.strip()}")
+    except FileNotFoundError:
+        print("WARNING: ollama CLI not found. Install Ollama first: https://ollama.com")
+    except subprocess.TimeoutExpired:
+        print("WARNING: ollama pull timed out after 5 minutes")
+
+
 def main() -> None:
     config, _ = load_config()
+    pull_ollama_model(config.agent.model)
     download_wake_word_model(config.wake_word)
     download_tts_model(config.tts)
     verify_audio_device(config.audio.capture_device)

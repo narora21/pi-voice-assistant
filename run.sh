@@ -45,6 +45,20 @@ echo "Syncing dependencies..."
 uv sync
 
 # -----------------------------
+# Ollama configuration
+# -----------------------------
+export OLLAMA_KEEP_ALIVE="60m"
+export OLLAMA_NUM_PARALLEL=1
+export OLLAMA_FLASH_ATTENTION=1
+
+echo "Ensuring Ollama is running (OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE})..."
+if ! pgrep -x ollama &>/dev/null; then
+    echo "Starting Ollama server..."
+    ollama serve &>/dev/null &
+    sleep 2
+fi
+
+# -----------------------------
 # Run setup
 # -----------------------------
 echo "Running setup script..."
