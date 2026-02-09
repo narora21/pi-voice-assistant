@@ -3,14 +3,21 @@ import logging
 from datetime import datetime
 from jinja2 import Template
 
+from src.config.schema import AgentConfig
+from src.tools.registry import ToolRegistry
+
 logger = logging.getLogger(__name__)
 
 class PromptLoader:
     @staticmethod
-    def load_system_prompt() -> str:
+    def load_system_prompt(config: AgentConfig, tool_registry: ToolRegistry) -> str:
+        if config.system_prompt:
+            return config.system_prompt
+        tool_names = list(map(lambda tool: tool.name, tool_registry.list_tools()))
         with open("./prompts/system_prompt.txt") as f:
-            prompt = f.read()
-            return prompt
+            template = Template(f.read())
+            full_sys_prompt = template.render(tools=tool_names)
+            return full_sys_prompt
     
     @staticmethod
     def _load_system_reminder(reminder_name, **kwargs) -> str | None:

@@ -13,8 +13,8 @@ from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import WakeWordDetector
 from src.core.signal_bus import SignalBus
-from src.tools.builtin.end_conversation import END_CONVERSATION
 from src.util.chunk_batcher import ChunkBatcher
+from src.util.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
 
@@ -198,8 +198,10 @@ class Orchestrator:
 
     async def _handle_thinking(self) -> None:
         """Run the agent loop and accumulate response."""
+        tool_registry = self._agent._tools
+        system_prompt = PromptLoader.load_system_prompt(self._config.agent, tool_registry)
         if not self._session.is_active:
-            self._session.start(self._config.agent.system_prompt)
+            self._session.start(system_prompt)
 
         response_text = ""
         
@@ -239,15 +241,7 @@ class Orchestrator:
         logger.info(f"Agent response: {response_text!r}")
         self._session.touch()
 
-        if self._signal_bus.poll(END_CONVERSATION):
-            logger.info("Agent ended the conversation")
-            self._session.end()
-            self._transition_to(AssistantState.WAITING)
-        elif self._session.is_active:
-            self._skip_greeting = True
-            self._transition_to(AssistantState.LISTENING)
-        else:
-            self._transition_to(AssistantState.WAITING)
+        self._transition_to(AssistantState.WAITING)
 
 
     async def _synthesis_worker(self, audio_queue: asyncio.Queue[bytes | None]) -> None:

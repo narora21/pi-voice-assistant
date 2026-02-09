@@ -8,6 +8,7 @@ from ollama import AsyncClient
 from src.config.schema import AgentConfig
 from src.core.session import Message, Session
 from src.tools.registry import ToolRegistry
+from src.util.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,14 @@ class AgentService:
     async def _warmup(self) -> None:
         """Send a request with the full system prompt and tools to prime the KV cache."""
         logger.info(f"Warming up model: {self._config.model}")
+        system_prompt = PromptLoader.load_system_prompt(self._config, self._tools)
         start = time.monotonic()
         try:
             ollama_tools = self._tools.to_ollama_tools() or None
             await self._client.chat(
                 model=self._config.model,
                 messages=[
-                    {"role": "system", "content": self._config.system_prompt},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": "hi"},
                 ],
                 tools=ollama_tools,

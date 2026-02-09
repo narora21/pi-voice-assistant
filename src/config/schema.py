@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 
-from src.util.prompt_loader import PromptLoader
-
 
 @dataclass(frozen=True)
 class WakeWordConfig:
@@ -42,7 +40,7 @@ class STTConfig:
 @dataclass(frozen=True)
 class AgentConfig:
     model: str = "qwen2.5:1.5b"
-    system_prompt: str = PromptLoader.load_system_prompt()
+    system_prompt: str | None = None
     max_tool_rounds: int = 5
     temperature: float = 0.7
     stream: bool = True

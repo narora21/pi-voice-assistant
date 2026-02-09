@@ -15,11 +15,11 @@ from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import OpenWakeWordService
 from src.tools.builtin.device_control import DeviceControlTool
-from src.tools.builtin.end_conversation import EndConversationTool
 from src.tools.builtin.web_fetch import WebFetchTool
 from src.tools.builtin.web_search import WebSearchTool
 from src.tools.registry import ToolRegistry
 from src.util.logging import setup_logging
+from src.util.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +33,19 @@ async def main(args) -> None:
     # Signal bus + tool registry
     signal_bus = SignalBus()
     registry = ToolRegistry()
-    #registry.register(DeviceControlTool())
-    registry.register(EndConversationTool(signal_bus))
-    registry.register(WebFetchTool())
-    registry.register(WebSearchTool(secrets.brave_search_api_key))
+    if not args.no_tools:
+        #registry.register(DeviceControlTool())
+        registry.register(WebFetchTool())
+        registry.register(WebSearchTool(secrets.brave_search_api_key))
+
+    system_prompt = PromptLoader.load_system_prompt(config.agent, registry)
+    logger.info(f"Loaded agent with system prompt:\n{system_prompt}")
 
     # Exit early for print mode
     if args.print:
         logger.info(f"Starting agent in headless mode (--print) with prompt: {args.print}")
         session = Session(config.session)
-        session.start(config.agent.system_prompt)
+        session.start(system_prompt)
         agent = AgentService(config.agent, registry)
         await agent.start()
         async for chunk in agent.run(args.print, session):
@@ -96,6 +99,7 @@ async def main(args) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Voice Assistant")
+    parser.add_argument("--no-tools", action="store_true", help="Skip registering tools")
     parser.add_argument("--no-wake-wait", action="store_true", help="Skip the waiting for wake word state")
     parser.add_argument("--print", action="store", help="Get a single headless response from the agent")
     args = parser.parse_args()
