@@ -12,6 +12,7 @@ class WakeWordConfig:
 
 @dataclass(frozen=True)
 class SoundBytesConfig:
+    init_byte: str = "Ready"
     greeting_bytes: list[str] = field(default_factory=list)
     thinking_bytes: list[str] = field(default_factory=list)
 

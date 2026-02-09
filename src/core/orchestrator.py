@@ -49,6 +49,7 @@ class Orchestrator:
         self._state = AssistantState.WAITING
         self._running = False
         self._skip_greeting = False
+        self._played_init = False
         self._pending_chunks: asyncio.Queue[str | None] = asyncio.Queue()
 
         # Temporary data passed between states
@@ -66,12 +67,14 @@ class Orchestrator:
         await self._playback.start()
 
         # Init sound bytes
+        self.init_byte = await self._tts.synthesize(self._config.sound_bytes.init_byte)
         self.greeting_bytes = [await self._tts.synthesize(byte) for byte in self._config.sound_bytes.greeting_bytes]
         self.thinking_bytes = [await self._tts.synthesize(byte) for byte in self._config.sound_bytes.thinking_bytes]
 
         self._running = True
         logger.info("Orchestrator started")
         await self._run_loop()
+
 
     async def stop(self) -> None:
         """Gracefully stop all services."""
@@ -121,6 +124,9 @@ class Orchestrator:
             return
         logger.info("Waiting for wake word...")
         self._audio_capture.start_capture()
+        if not self._played_init:
+            await self._playback.play(self.init_byte) # Signal ready for voice
+            self._played_init = True
         async for frame in self._audio_capture.stream_frames():
             if not self._running:
                 break
