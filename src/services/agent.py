@@ -32,6 +32,10 @@ class AgentService:
 
     async def _warmup(self) -> None:
         """Send a request with the full system prompt and tools to prime the KV cache."""
+        if self._client is None:
+            logger.warning("Cannot warmup: client not initialized")
+            return
+            
         logger.info(f"Warming up model: {self._config.model}")
         system_prompt = PromptLoader.load_system_prompt(self._config, self._tools)
         start = time.monotonic()
@@ -44,7 +48,11 @@ class AgentService:
                     {"role": "user", "content": "hi"},
                 ],
                 tools=ollama_tools,
-                options={"num_predict": 1},
+                options={
+                    "num_predict": 1,
+                    "num_ctx": self._config.num_ctx,  # Match actual config
+                    "num_thread": self._config.num_thread,
+                },
             )
             elapsed = time.monotonic() - start
             logger.info(f"Model warmup completed in {elapsed:.1f}s")

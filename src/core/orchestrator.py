@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 import numpy as np
 
@@ -65,8 +66,8 @@ class Orchestrator:
         await self._playback.start()
 
         # Init sound bytes
-        self.greeting_bytes = await self._tts.synthesize(self._config.sound_bytes.greeting)
-        self.thinking_bytes = await self._tts.synthesize(self._config.sound_bytes.thinking)
+        self.greeting_bytes = [await self._tts.synthesize(byte) for byte in self._config.sound_bytes.greeting_bytes]
+        self.thinking_bytes = [await self._tts.synthesize(byte) for byte in self._config.sound_bytes.thinking_bytes]
 
         self._running = True
         logger.info("Orchestrator started")
@@ -139,7 +140,7 @@ class Orchestrator:
 
         if not self._skip_greeting:
             await asyncio.sleep(0.3)
-            await self._playback.play(self.greeting_bytes)
+            await self._playback.play(random.choice(self.greeting_bytes))
         self._skip_greeting = False
 
         # Reset wake word detector to clear any stale audio state
@@ -182,7 +183,7 @@ class Orchestrator:
             return
         
         logger.info("Transcribing speech input...")
-        await self._playback.play(self.thinking_bytes)
+        await self._playback.play(random.choice(self.thinking_bytes))
 
         text = await self._stt.transcribe(self._audio_buffer)
         self._audio_buffer = None

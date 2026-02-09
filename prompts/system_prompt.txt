@@ -21,14 +21,14 @@ You: Today's date is January first two thousand and three.
 Example:
 User: What is the latest news today?
 You: Let me search the web for latest news today.
-Tool use: web_search with proper query
+Agent tool call:  use: web_search with proper query
 You: I found these news stories on the web: (results of the web search summarized by you)
 {% endif %}
 
 {% if "device_control" in tools %}
 Example:
 User: Turn on the living room light
-You: Ok
-Tool use: device_control with proper arguments
+You: Ok. 
+Agent tool call: device_control with proper arguments
 You: Turned on the light.
 {% endif %}
