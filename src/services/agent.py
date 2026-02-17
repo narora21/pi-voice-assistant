@@ -48,6 +48,7 @@ class AgentService:
                     {"role": "user", "content": "hi"},
                 ],
                 tools=ollama_tools,
+                keep_alive=-1,
                 options={
                     "num_predict": 1,
                     "num_ctx": self._config.num_ctx,  # Match actual config
@@ -102,6 +103,7 @@ class AgentService:
                     model=self._config.model,
                     messages=session.get_ollama_messages(),
                     tools=ollama_tools,
+                    keep_alive=-1,
                     options={
                         "temperature": self._config.temperature,
                         "num_ctx": self._config.num_ctx,
@@ -158,6 +160,7 @@ class AgentService:
                     model=self._config.model,
                     messages=session.get_ollama_messages(),
                     tools=ollama_tools,
+                    keep_alive=-1,
                     options={
                         "temperature": self._config.temperature,
                         "num_ctx": self._config.num_ctx,
