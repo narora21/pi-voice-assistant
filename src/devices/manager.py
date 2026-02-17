@@ -1,6 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 
 from src.devices.protocols.base import DeviceProtocol
@@ -8,15 +9,20 @@ from src.devices.protocols.kasa import KasaDevice
 
 logger = logging.getLogger(__name__)
 
-PROTOCOL_MAP: dict[str, type] = {
-    "kasa": KasaDevice,
+
+class DeviceType(Enum):
+    KASA = "kasa"
+
+
+PROTOCOL_MAP: dict[DeviceType, type] = {
+    DeviceType.KASA: KasaDevice,
 }
 
 
 @dataclass(frozen=True)
 class DeviceEntry:
     name: str
-    type: str
+    type: DeviceType
     ip: str
     aliases: list[str] = field(default_factory=list)
 
@@ -24,9 +30,16 @@ class DeviceEntry:
 class DeviceManager:
     """Loads device config and routes commands to the correct protocol backend."""
 
-    def __init__(self, config_path: str = "devices.json") -> None:
+    def __init__(
+        self,
+        config_path: str = "devices.json",
+        kasa_username: str = "",
+        kasa_password: str = "",
+    ) -> None:
         self._devices: dict[str, DeviceEntry] = {}
         self._protocols: dict[str, DeviceProtocol] = {}
+        self._kasa_username = kasa_username
+        self._kasa_password = kasa_password
         self._load(config_path)
 
     def _load(self, config_path: str) -> None:
@@ -39,9 +52,10 @@ class DeviceManager:
             data = json.load(f)
 
         for raw in data.get("devices", []):
-            device_type = raw["type"]
-            if device_type not in PROTOCOL_MAP:
-                logger.warning(f"Unknown device type '{device_type}', skipping {raw['name']}")
+            try:
+                device_type = DeviceType(raw["type"])
+            except ValueError:
+                logger.warning(f"Unknown device type '{raw['type']}', skipping {raw['name']}")
                 continue
 
             entry = DeviceEntry(
@@ -58,9 +72,14 @@ class DeviceManager:
 
             # Lazily create one protocol instance per type
             if device_type not in self._protocols:
-                self._protocols[device_type] = PROTOCOL_MAP[device_type]()
+                if device_type == DeviceType.KASA:
+                    self._protocols[device_type] = KasaDevice(
+                        self._kasa_username, self._kasa_password,
+                    )
+                else:
+                    self._protocols[device_type] = PROTOCOL_MAP[device_type]()
 
-            logger.info(f"Loaded device: {entry.name} ({device_type} @ {entry.ip})")
+            logger.info(f"Loaded device: {entry.name} ({device_type.value} @ {entry.ip})")
 
     @property
     def device_names(self) -> list[str]:

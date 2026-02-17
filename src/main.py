@@ -34,7 +34,10 @@ async def main(args) -> None:
     # Signal bus + tool registry
     signal_bus = SignalBus()
     registry = ToolRegistry()
-    device_manager = DeviceManager()
+    device_manager = DeviceManager(
+        kasa_username=secrets.kasa_username,
+        kasa_password=secrets.kasa_password,
+    )
     if not args.no_tools:
         registry.register(DeviceControlTool(device_manager))
         registry.register(WebFetchTool())
