@@ -5,6 +5,7 @@ venv/
 
 # Config
 config.yaml
+devices.json
 
 # Python
 __pycache__/

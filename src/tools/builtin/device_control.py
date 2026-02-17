@@ -1,25 +1,33 @@
 import logging
 from typing import Any
 
+from src.devices.manager import DeviceManager
 from src.tools.base import ToolDefinition, ToolParameter
 
 logger = logging.getLogger(__name__)
 
 
 class DeviceControlTool:
-    """Control smart home devices (mock implementation)."""
+    """Control smart home devices via the device manager."""
+
+    def __init__(self, manager: DeviceManager) -> None:
+        self._manager = manager
 
     @property
     def definition(self) -> ToolDefinition:
+        device_names = self._manager.device_names
         return ToolDefinition(
             name="device_control",
-            description="Control a smart home device. Can turn devices on or off.",
+            description=(
+                "Control a smart home device. Can turn devices on or off. "
+                f"Available devices: {', '.join(device_names)}."
+            ),
             parameters=[
                 ToolParameter(
                     name="device_name",
                     type="string",
-                    description="Name of the device to control (e.g., 'living_room_light')",
-                    enum=["living_room_light"]
+                    description="Name of the device to control",
+                    enum=device_names if device_names else None,
                 ),
                 ToolParameter(
                     name="action",
@@ -39,6 +47,7 @@ class DeviceControlTool:
         if action not in ("on", "off"):
             return f"Error: Invalid action '{action}'. Must be 'on' or 'off'."
 
-        # Mock: in production this would call python-kasa or similar
-        logger.info(f"Mock device control: {device_name} -> {action}")
-        return f"OK: Device '{device_name}' turned {action}."
+        if action == "on":
+            return await self._manager.turn_on(device_name)
+        else:
+            return await self._manager.turn_off(device_name)

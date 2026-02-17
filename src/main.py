@@ -14,6 +14,7 @@ from src.services.audio_playback import LiveAudioPlaybackService, MockAudioPlayb
 from src.services.stt import SpeechToTextService
 from src.services.tts import TextToSpeechService
 from src.services.wake_word import OpenWakeWordService
+from src.devices.manager import DeviceManager
 from src.tools.builtin.device_control import DeviceControlTool
 from src.tools.builtin.web_fetch import WebFetchTool
 from src.tools.builtin.web_search import WebSearchTool
@@ -33,8 +34,9 @@ async def main(args) -> None:
     # Signal bus + tool registry
     signal_bus = SignalBus()
     registry = ToolRegistry()
+    device_manager = DeviceManager()
     if not args.no_tools:
-        #registry.register(DeviceControlTool())
+        registry.register(DeviceControlTool(device_manager))
         registry.register(WebFetchTool())
         registry.register(WebSearchTool(secrets.brave_search_api_key))
 
