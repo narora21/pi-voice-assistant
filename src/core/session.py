@@ -35,9 +35,10 @@ class Session:
     def add_message(self, message: Message) -> None:
         """Append message and update idle timer."""
         if len(self._messages) == 1 and self._messages[0].role == "system" and message.role == "user":
-            reminders = PromptLoader.get_system_reminders()
-            message.content = "\n".join(reminders) + message.content
-            logger.info(f"Adding {len(reminders)} system reminder(s)")
+            if self._config.include_system_reminders:
+                reminders = PromptLoader.get_system_reminders()
+                message.content = "\n".join(reminders) + message.content
+                logger.info(f"Added {len(reminders)} system reminder(s)")
         self._messages.append(message)
         self._last_activity = time.monotonic()
         self._trim_history()
