@@ -47,7 +47,7 @@ uv sync
 # -----------------------------
 # Ollama configuration
 # -----------------------------
-export OLLAMA_KEEP_ALIVE="60m"
+export OLLAMA_KEEP_ALIVE=-1
 export OLLAMA_NUM_PARALLEL=1
 export OLLAMA_FLASH_ATTENTION=1
 
